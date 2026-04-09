@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../providers/merch_provider.dart';
-import 'questionnaire_page.dart';
 
 class ResultsPage extends StatefulWidget {
   const ResultsPage({super.key});
@@ -17,7 +16,7 @@ class ResultsPage extends StatefulWidget {
 }
 
 class _ResultsPageState extends State<ResultsPage> {
-  static const _shotLabels = ['Front View', 'Back View', 'Lifestyle'];
+  static const _shotLabels = ['Front', 'Back', 'Lifestyle'];
 
   final PageController _pageController = PageController(viewportFraction: 0.88);
   int _currentPage = 0;
@@ -58,15 +57,6 @@ class _ResultsPageState extends State<ResultsPage> {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                _currentPage < _shotLabels.length
-                    ? _shotLabels[_currentPage]
-                    : 'Design ${_currentPage + 1}',
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Color(0xFF4E4D56),
-                ),
-              ),
               const SizedBox(height: 20),
               Expanded(
                 child: Center(
@@ -111,29 +101,55 @@ class _ResultsPageState extends State<ResultsPage> {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xFFDDD6EC),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.black.withValues(alpha: 0.14),
                   blurRadius: 24,
-                  offset: const Offset(0, 10),
+                  spreadRadius: -4,
+                  offset: const Offset(0, 12),
                 ),
               ],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Image.memory(
-                  images[index],
-                  fit: BoxFit.contain,
-                  width: double.infinity,
-                  height: double.infinity,
-                  errorBuilder: (_, _, _) => const Center(
-                    child: Icon(Icons.broken_image_outlined, size: 48),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Image.memory(
+                      images[index],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (_, _, _) => const Center(
+                        child: Icon(Icons.broken_image_outlined, size: 48),
+                      ),
+                    ),
                   ),
-                ),
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.66),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _labelForIndex(index),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -150,9 +166,9 @@ class _ResultsPageState extends State<ResultsPage> {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () => _saveCurrentImage(images),
-            icon: const Icon(Icons.download_rounded),
+            icon: const Icon(Icons.shopping_bag_outlined),
             label: const Text(
-              'Save Image',
+              'Place Order',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             style: ElevatedButton.styleFrom(
@@ -165,16 +181,13 @@ class _ResultsPageState extends State<ResultsPage> {
             ),
           ),
         ),
-        const SizedBox(height: 10),
-        TextButton(
-          onPressed: _startOver,
-          child: const Text(
-            'Start Over',
-            style: TextStyle(fontSize: 15, color: Color(0xFF57565E)),
-          ),
-        ),
       ],
     );
+  }
+
+  String _labelForIndex(int index) {
+    if (index < _shotLabels.length) return _shotLabels[index];
+    return 'Design ${index + 1}';
   }
 
   Future<void> _saveCurrentImage(List<Uint8List> images) async {
@@ -184,9 +197,7 @@ class _ResultsPageState extends State<ResultsPage> {
     try {
       final dir = await getApplicationDocumentsDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final label = page < _shotLabels.length
-          ? _shotLabels[page].toLowerCase().replaceAll(' ', '_')
-          : 'design_$page';
+      final label = _labelForIndex(page).toLowerCase().replaceAll(' ', '_');
       final file = File('${dir.path}/merchai_${label}_$timestamp.png');
       await file.writeAsBytes(images[page]);
 
@@ -202,10 +213,4 @@ class _ResultsPageState extends State<ResultsPage> {
     }
   }
 
-  void _startOver() {
-    context.read<MerchProvider>().reset();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const QuestionnairePage()),
-    );
-  }
 }

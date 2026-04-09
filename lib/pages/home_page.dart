@@ -81,7 +81,7 @@ class HomePage extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Create cool merch conepts in min',
+                        'Create cool merch conepts in minutes',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 15,

@@ -50,6 +50,8 @@ class GeminiService {
       _ShotType.back =>
         'BACK VIEW: Show exactly ONE ${order.product.toLowerCase()} from the back. '
             'It must be the exact same item as the front shot (same color, fabric, fit, and design). '
+            'This is a back-only camera angle: do not show the front panel of the garment. '
+            'Do not mirror, reuse, or clone the front image composition. '
             'No duplicates and no extra products. '
             'No mannequin, no person, no hanger. '
             'Pure white background, centered product, straight-on camera, symmetrical framing.',
@@ -63,13 +65,16 @@ class GeminiService {
     };
 
     final logoLine = order.logoFile != null
-        ? 'The uploaded logo image MUST be incorporated prominently into the design '
-            'at the specified placement area. Reproduce it faithfully.'
+        ? 'Use the uploaded logo image as an immutable reference asset. '
+            'Reproduce the logo exactly as uploaded (same shapes, proportions, spacing, orientation, and all colors). '
+            'Do not redraw, restyle, simplify, recolor, distort, blur, or reinterpret the logo. '
+            'Place that exact logo at the specified placement area.'
         : '';
 
     final taglineLine = (order.tagline != null && order.tagline!.trim().isNotEmpty)
-        ? 'Render the tagline text "${order.tagline!.trim()}" clearly and legibly '
-            'as part of the design.'
+        ? 'Render the tagline text exactly as: "${order.tagline!.trim()}". '
+            'Keep spelling, capitalization, punctuation, and spacing exactly identical. '
+            'Do not paraphrase, replace, or edit any character.'
         : '';
 
     return '''
@@ -84,6 +89,8 @@ Design requirements:
 - Base color of the product: ${order.color}.
 - Design style: ${order.style}.
 - Design placement: ${order.placement}.
+- Color fidelity is strict: preserve the exact colors from provided references with no hue shift, tint, saturation change, or tone remapping.
+- Ensure all generated views (front, back, lifestyle) use the exact same product/base color and the same design color palette.
 $logoLine
 $taglineLine
 
@@ -105,9 +112,9 @@ Image requirements:
   Future<Uint8List?> _generateSingle(MerchOrder order, _ShotType shot) async {
     final prompt = _buildPrompt(order, shot);
 
-    debugPrint('--- MERCH_AI PROMPT [${shot.name.toUpperCase()}] ---');
-    debugPrint(prompt);
-    debugPrint('--- END PROMPT ---');
+    print('--- MERCH_AI PROMPT [${shot.name.toUpperCase()}] ---');
+    print(prompt);
+    print('--- END PROMPT ---');
 
     try {
       final parts = <Map<String, Object>>[];
@@ -137,6 +144,10 @@ Image requirements:
           },
         },
       });
+
+      print('--- MERCH_AI REQUEST BODY [${shot.name.toUpperCase()}] ---');
+      print(body);
+      print('--- END REQUEST BODY ---');
 
       debugPrint('MERCH_AI: Sending ${shot.name} request to Gemini...');
 
