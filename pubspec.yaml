@@ -37,6 +37,8 @@ dependencies:
   dotted_border: ^3.1.0
   image_picker: ^1.2.1
   provider: ^6.1.5+1
+  flutter_svg: ^2.2.0
+  flutter_colorpicker: ^1.1.0
   smooth_page_indicator: ^2.0.1
   path_provider: ^2.1.5
   http: ^1.6.0
@@ -68,6 +70,7 @@ flutter:
   assets:
     - assets/env/
     - assets/cotton-polo-shirt.png
+    - assets/Tshirt.svg
     - assets/websiteBG.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see

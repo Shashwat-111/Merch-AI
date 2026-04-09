@@ -1,6 +1,9 @@
 import 'dart:io';
 
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -23,6 +26,15 @@ class QuestionnairePage extends StatefulWidget {
 class _QuestionnairePageState extends State<QuestionnairePage> {
   final TextEditingController _taglineController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
+  String? _tshirtSvgTemplate;
+
+  static const String _whiteFillToken = 'fill="rgb(100%, 100%, 100%)"';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTshirtSvg();
+  }
 
   @override
   void dispose() {
@@ -141,13 +153,7 @@ class _QuestionnairePageState extends State<QuestionnairePage> {
         );
 
       case 5:
-        return _optionStep(
-          key: 'color',
-          title: 'Pick your base color',
-          options: p.availableColors,
-          selected: p.selectedColor,
-          onSelect: p.selectColor,
-        );
+        return _buildBaseColorStep(p);
 
       case 6:
         return _optionStep(
@@ -268,6 +274,79 @@ class _QuestionnairePageState extends State<QuestionnairePage> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBaseColorStep(MerchProvider p) {
+    final svgData = _buildColoredSvg(p.baseColor);
+
+    return StepWrap(
+      key: const ValueKey('color'),
+      title: 'Pick your base color',
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Stack(
+            children: [
+              AspectRatio(
+                aspectRatio: 1.35,
+                child: svgData == null
+                    ? const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                      )
+                    : SvgPicture.string(svgData, fit: BoxFit.contain),
+              ),
+              Positioned(
+                top: 6,
+                left: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _toHex(p.baseColor),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(10, 6, 10, 2),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.65),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: SizedBox(
+            height: (MediaQuery.sizeOf(context).height * 0.28).clamp(224.0, 300.0),
+            child: Center(
+              child: ColorPicker(
+                pickerColor: p.baseColor,
+                onColorChanged: p.setBaseColor,
+                enableAlpha: false,
+                portraitOnly: true,
+                pickerAreaHeightPercent: 0.48,
+                labelTypes: [],
+                pickerAreaBorderRadius: const BorderRadius.all(Radius.circular(12)),
+              ),
             ),
           ),
         ),
@@ -400,7 +479,7 @@ class _QuestionnairePageState extends State<QuestionnairePage> {
       case 4:
         return _requireSelection(p.selectedPlacement, 'Please select a placement');
       case 5:
-        return _requireSelection(p.selectedColor, 'Please pick a color');
+        return true;
       case 6:
         return _requireSelection(p.selectedStyle, 'Please choose a style');
       default:
@@ -421,5 +500,30 @@ class _QuestionnairePageState extends State<QuestionnairePage> {
     );
     if (picked == null || !mounted) return;
     p.setLogo(picked);
+  }
+
+  Future<void> _loadTshirtSvg() async {
+    try {
+      final svg = await rootBundle.loadString('assets/Tshirt.svg');
+      if (!mounted) return;
+      setState(() => _tshirtSvgTemplate = svg);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _tshirtSvgTemplate = null);
+    }
+  }
+
+  String? _buildColoredSvg(Color color) {
+    final template = _tshirtSvgTemplate;
+    if (template == null) return null;
+    final replacement = 'fill="${_toHex(color)}"';
+    return template.replaceAll(_whiteFillToken, replacement);
+  }
+
+  String _toHex(Color color) {
+    final r = color.red.toRadixString(16).padLeft(2, '0');
+    final g = color.green.toRadixString(16).padLeft(2, '0');
+    final b = color.blue.toRadixString(16).padLeft(2, '0');
+    return '#${(r + g + b).toUpperCase()}';
   }
 }

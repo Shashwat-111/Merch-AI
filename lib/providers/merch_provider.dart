@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../data/question_data.dart';
@@ -24,8 +25,10 @@ class MerchProvider extends ChangeNotifier {
   String? _selectedPlacement;
   String? get selectedPlacement => _selectedPlacement;
 
-  String? _selectedColor;
+  String? _selectedColor = '#FFFFFF';
   String? get selectedColor => _selectedColor;
+  Color _baseColor = Colors.white;
+  Color get baseColor => _baseColor;
 
   String? _selectedStyle;
   String? get selectedStyle => _selectedStyle;
@@ -94,6 +97,14 @@ class MerchProvider extends ChangeNotifier {
 
   void selectColor(String value) {
     _selectedColor = value;
+    final mapped = _namedColorValue(value);
+    if (mapped != null) _baseColor = mapped;
+    notifyListeners();
+  }
+
+  void setBaseColor(Color color) {
+    _baseColor = color;
+    _selectedColor = _toHex(color);
     notifyListeners();
   }
 
@@ -169,7 +180,8 @@ class MerchProvider extends ChangeNotifier {
     _selectedCategory = null;
     _selectedProduct = null;
     _selectedPlacement = null;
-    _selectedColor = null;
+    _selectedColor = '#FFFFFF';
+    _baseColor = Colors.white;
     _selectedStyle = null;
     tagline = '';
     _logoFile = null;
@@ -177,5 +189,39 @@ class MerchProvider extends ChangeNotifier {
     _error = null;
     _generatedImages = [];
     notifyListeners();
+  }
+
+  Color? _namedColorValue(String name) {
+    switch (name.toLowerCase()) {
+      case 'black':
+      case 'matte black':
+        return const Color(0xFF111111);
+      case 'white':
+      case 'white background':
+      case 'transparent':
+        return Colors.white;
+      case 'navy':
+      case 'navy blue':
+        return const Color(0xFF1D3557);
+      case 'heather grey':
+        return const Color(0xFF9FA3AA);
+      case 'olive green':
+        return const Color(0xFF556B2F);
+      case 'maroon':
+        return const Color(0xFF7A1F2A);
+      case 'khaki':
+        return const Color(0xFFC3B091);
+      case 'custom':
+        return _baseColor;
+      default:
+        return null;
+    }
+  }
+
+  String _toHex(Color color) {
+    final r = color.red.toRadixString(16).padLeft(2, '0');
+    final g = color.green.toRadixString(16).padLeft(2, '0');
+    final b = color.blue.toRadixString(16).padLeft(2, '0');
+    return '#${(r + g + b).toUpperCase()}';
   }
 }
