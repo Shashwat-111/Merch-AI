@@ -30,6 +30,19 @@ class _QuestionnairePageState extends State<QuestionnairePage> {
 
   static const String _whiteFillToken = 'fill="rgb(100%, 100%, 100%)"';
 
+  static const _paletteColors = <Color>[
+    Color(0xFFFFFFFF), // White
+    Color(0xFF111111), // Black
+    Color(0xFF1D3557), // Navy
+    Color(0xFF9FA3AA), // Grey
+    Color(0xFF556B2F), // Olive
+    Color(0xFF7A1F2A), // Maroon
+    Color(0xFFC3B091), // Khaki
+    Color(0xFFE63946), // Red
+    Color(0xFF2A9D8F), // Teal
+    Color(0xFF264653), // Slate
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -284,73 +297,176 @@ class _QuestionnairePageState extends State<QuestionnairePage> {
   Widget _buildBaseColorStep(MerchProvider p) {
     final svgData = _buildColoredSvg(p.baseColor);
 
-    return StepWrap(
+    // SizedBox.expand so it fills the AnimatedSwitcher's Stack fully.
+    return SizedBox.expand(
       key: const ValueKey('color'),
-      title: 'Pick your base color',
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Pick your base color',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF121218),
+            ),
           ),
-          child: Stack(
-            children: [
-              AspectRatio(
-                aspectRatio: 1.35,
-                child: svgData == null
-                    ? const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2.5),
-                      )
-                    : SvgPicture.string(svgData, fit: BoxFit.contain),
+          const SizedBox(height: 20),
+
+          // --- T-shirt preview (fills remaining space) ---
+          Flexible(
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(20),
               ),
-              Positioned(
-                top: 6,
-                left: 6,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _toHex(p.baseColor),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+              child: Stack(
+                children: [
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: svgData == null
+                          ? const CircularProgressIndicator(strokeWidth: 2.5)
+                          : SvgPicture.string(svgData, fit: BoxFit.contain),
                     ),
                   ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(10, 6, 10, 2),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.65),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: SizedBox(
-            height: (MediaQuery.sizeOf(context).height * 0.28).clamp(224.0, 300.0),
-            child: Center(
-              child: ColorPicker(
-                pickerColor: p.baseColor,
-                onColorChanged: p.setBaseColor,
-                enableAlpha: false,
-                portraitOnly: true,
-                pickerAreaHeightPercent: 0.48,
-                labelTypes: [],
-                pickerAreaBorderRadius: const BorderRadius.all(Radius.circular(12)),
+                  // Hex badge
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF121218),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        _toHex(p.baseColor),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
+          const SizedBox(height: 16),
+
+          // --- Color palette row ---
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (final color in _paletteColors)
+                  _ColorSwatch(
+                    color: color,
+                    isSelected: _isSameColor(p.baseColor, color),
+                    onTap: () => p.setBaseColor(color),
+                  ),
+                // Custom color button
+                _CustomColorSwatch(
+                  currentColor: p.baseColor,
+                  isSelected: !_paletteColors.any((c) => _isSameColor(p.baseColor, c)),
+                  onTap: () => _openColorPicker(p),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isSameColor(Color a, Color b) {
+    return a.red == b.red && a.green == b.green && a.blue == b.blue;
+  }
+
+  void _openColorPicker(MerchProvider p) {
+    Color tempColor = p.baseColor;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          decoration: const BoxDecoration(
+            color: Color(0xFFF5F0FC),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFCBC4D6),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text(
+              'Custom Color',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF121218),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 340,
+              child: ColorPicker(
+                pickerColor: tempColor,
+                onColorChanged: (c) => tempColor = c,
+                enableAlpha: false,
+                portraitOnly: true,
+                pickerAreaHeightPercent: 0.55,
+                labelTypes: const [],
+                pickerAreaBorderRadius: const BorderRadius.all(Radius.circular(14)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () {
+                  p.setBaseColor(tempColor);
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  elevation: 0,
+                  backgroundColor: const Color(0xFF11111C),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                ),
+                child: const Text(
+                  'Apply Color',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
+      ),
     );
   }
 
@@ -525,5 +641,101 @@ class _QuestionnairePageState extends State<QuestionnairePage> {
     final g = color.green.toRadixString(16).padLeft(2, '0');
     final b = color.blue.toRadixString(16).padLeft(2, '0');
     return '#${(r + g + b).toUpperCase()}';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Swatch widgets
+// ---------------------------------------------------------------------------
+
+class _ColorSwatch extends StatelessWidget {
+  const _ColorSwatch({
+    required this.color,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final Color color;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  bool get _isWhite =>
+      color.red > 240 && color.green > 240 && color.blue > 240;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF6C3FC5)
+                : _isWhite
+                    ? const Color(0xFFD0CDD8)
+                    : Colors.transparent,
+            width: isSelected ? 2.5 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.45),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  )
+                ]
+              : null,
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomColorSwatch extends StatelessWidget {
+  const _CustomColorSwatch({
+    required this.currentColor,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final Color currentColor;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const SweepGradient(
+            colors: [
+              Color(0xFFFF0000),
+              Color(0xFFFFFF00),
+              Color(0xFF00FF00),
+              Color(0xFF00FFFF),
+              Color(0xFF0000FF),
+              Color(0xFFFF00FF),
+              Color(0xFFFF0000),
+            ],
+          ),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF6C3FC5)
+                : Colors.transparent,
+            width: isSelected ? 2.5 : 1,
+          ),
+        ),
+      ),
+    );
   }
 }
